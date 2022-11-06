@@ -6,3 +6,6 @@ A discord bot to play "Prompt Battle" using Stable Diffusion's DreamStudio
 ## Setup
 * DISCORD_TOKEN
 * STABLE_DIFFUSION_TOKEN
+
+* docker build . -t bot
+* docker run -it bot --env-file .env
