@@ -26,11 +26,16 @@ bot = commands.Bot(
     intents=intents,
 )
 
+IMAGE_DIMENSIONS = (256,256)
 
 @bot.command()
 async def dream(ctx, *, prompt):
     msg = await ctx.send(f"“{prompt}”\n> Generating...")
-    answers = stability_api.generate(prompt=prompt)
+    answers = stability_api.generate(
+        prompt=prompt, 
+        width=IMAGE_DIMENSIONS[0], 
+        height=IMAGE_DIMENSIONS[1]
+    )
     for resp in answers:
         for artifact in resp.artifacts:
             if artifact.finish_reason == generation.FILTER:
@@ -44,9 +49,20 @@ async def dream(ctx, *, prompt):
                 arr = io.BytesIO(artifact.binary)
                 img.save(arr, format='PNG')
                 arr.seek(0)
-                file = discord.File(arr, filename='art.png')
-                await msg.edit(content=f"“{prompt}” \n")
-                await ctx.send(file=file)
+                file = discord.File(arr, filename='SPOILER_art.png')
+                await msg.edit(content=f"Ready.")
+                file_msg = await ctx.send(content=prompt, file=file)
+                await file_msg.add_reaction("⭐")
+                
+                
+@bot.command()
+async def react(ctx):
+    def check(reaction, user):
+        return user == ctx.message.author
+
+    reaction = await bot.wait_for("reaction_add", check=check)
+    if reaction[0] == "⭐":
+        await ctx.send(f"Dieses Kunstwerk wurde von dir markiert.")
 
 
 bot.run(os.environ["DISCORD_TOKEN"])
