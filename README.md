@@ -11,4 +11,7 @@ A discord bot to play "Prompt Battle" using Stable Diffusion's DreamStudio
 
 `docker run --env-file .env -it bot`
 
-`docker run --rm -it $(docker build -q .)`
+`docker run --rm --env-file .\.env -it $(docker build -q .)`
+
+Bot permissions:
+397821475904
