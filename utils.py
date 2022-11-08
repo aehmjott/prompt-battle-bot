@@ -1,8 +1,10 @@
 from PIL import Image, ImageDraw, ImageFont
 import textwrap
 from math import sqrt
+import discord
+import io
 
-def add_text(image, text, text_height=100, text_padding=5, footer=False):
+def add_text(image, text, text_height=100, text_padding=5, footer=False, color="black"):
     width, height = image.size
     
     image_with_text = Image.new("RGB", (width, height + text_height), color="white")
@@ -17,7 +19,7 @@ def add_text(image, text, text_height=100, text_padding=5, footer=False):
     draw = ImageDraw.Draw(image_with_text)
     font_size = 100
     while font_size > 0:
-        font = ImageFont.truetype(r"C:\Windows\Fonts\Comic.ttf", font_size)
+        font = ImageFont.truetype("windows_command_prompt.ttf", font_size)
         size = draw.multiline_textbbox((text_padding, text_padding), wrapped_text, font, align="center")
         if size[2] < (width - 2 * text_padding) and size[3] < text_height - 2 * text_padding:
             break
@@ -29,7 +31,7 @@ def add_text(image, text, text_height=100, text_padding=5, footer=False):
     if footer:
         text_y += height
         
-    draw.multiline_text((text_x, text_y), wrapped_text, "#000", font, align="center")
+    draw.multiline_text((text_x, text_y), wrapped_text, color, font, align="center")
     return image_with_text
     
     
@@ -61,14 +63,24 @@ def get_image_from_grid(image, col, row, width, height, gap=5):
     
     return image.crop((left, top, right, bottom))
     
+colors = ["darkred", "darkblue", "darkgreen", "darkblue", "indigo", "darkorange"]
     
 def create_collage (images, text):
     images_with_text = []
-    for image, image_text in images:
-        image_with_heading = add_text(image, image_text, footer=True)
+    for (idx, (image, image_text)) in enumerate(images):
+        c = colors[idx] if idx < len(colors) else "black"
+        image_with_heading = add_text(image, image_text, footer=True, color=c)
         images_with_text.append(image_with_heading)
     
     collage = combine_images(images_with_text, cols=len(images_with_text))
     collage = add_text(collage, text, text_padding=10)
     return collage
     
+    
+    
+def pil_image2discord_image(image, filename):
+    arr = io.BytesIO()
+    image.save(arr, "JPEG")
+    arr.seek(0)
+    return discord.File(arr, filename=filename)
+
