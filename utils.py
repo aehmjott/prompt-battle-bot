@@ -2,7 +2,6 @@ from PIL import Image, ImageDraw, ImageFont
 import textwrap
 from math import sqrt
 
-
 def add_text(image, text, text_height=100, text_padding=5, footer=False):
     width, height = image.size
     
@@ -26,6 +25,7 @@ def add_text(image, text, text_height=100, text_padding=5, footer=False):
         
     text_x = (width - size[2]) / 2
     text_y = (text_height - size[3]) / 2
+    
     if footer:
         text_y += height
         
@@ -33,26 +33,42 @@ def add_text(image, text, text_height=100, text_padding=5, footer=False):
     return image_with_text
     
     
-def combine_images(images, gap=5):
-    collage_width = sum([img.size[0] for img in images]) + (len(images) - 1) * gap
-    collage_height = max([img.size[1] for img in images])
+def combine_images(images, gap=5, cols=2):
+    rows = min((len(images) + 1) // cols, len(images))
+    
+    size = images[0].size
+
+    collage_width = size[0] * cols + (cols - 1) * gap
+    collage_height = size[1] * rows + (rows - 1) * gap
     collage = Image.new("RGB", (collage_width, collage_height), color="white")
     
-    x = 0
-    for i, img in enumerate(images):
-        collage.paste(img, (x, 0))
-        x += img.size[0] + gap
-        
+    for r in range(rows):
+        for c in range(cols):
+            if not len(images):
+                continue
+            img = images.pop()
+            img.resize(size)
+            collage.paste(img, (c * (size[0] + gap), r * (size[1] + gap)))
+
     return collage
-
-
+    
+    
+def get_image_from_grid(image, col, row, width, height, gap=5):
+    left = col * (width + gap)
+    top = row * (height + gap)
+    right = left + width
+    bottom = top + height
+    
+    return image.crop((left, top, right, bottom))
+    
+    
 def create_collage (images, text):
     images_with_text = []
     for image, image_text in images:
         image_with_heading = add_text(image, image_text, footer=True)
         images_with_text.append(image_with_heading)
     
-    collage = combine_images(images_with_text)
+    collage = combine_images(images_with_text, cols=len(images_with_text))
     collage = add_text(collage, text, text_padding=10)
     return collage
     
