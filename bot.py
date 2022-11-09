@@ -41,15 +41,20 @@ number_reactions = {
 @bot.command()
 async def dream(ctx, *, prompt):
     await ctx.message.delete()
-    msg = await ctx.send(f"Erschaffe Kunst ...")
+    msg = await ctx.send(f"{ctx.message.author.mention}\nErschaffe Kunst ...")
     
     generated_images = []
+    
+    # samplers:
+    # SAMPLER_K_DPM_2_ANCESTRAL, SAMPLER_K_EULER_ANCESTRAL 
     answers = stability_api.generate(
         prompt=prompt, 
         width=IMAGE_DIMENSIONS[0], 
         height=IMAGE_DIMENSIONS[1],
+        sampler=generation.SAMPLER_K_EULER_ANCESTRAL,
+        guidance_preset=generation.GUIDANCE_PRESET_SLOW,
+        cfg_scale=35,
         samples=4,
-        cfg_scale=15
     )
     for resp in answers:
         for artifact in resp.artifacts:
@@ -57,13 +62,13 @@ async def dream(ctx, *, prompt):
                 warnings.warn(
                     "Your request activated the API's safety filters and could not be processed."
                     "Please modify the prompt and try again.")
-                await msg.edit(content="Deine Eingabe verstößt gegen die Sicherheitsfilter der KI. Versuche es noch einmal.")
+                await msg.edit(content=f"{ctx.message.author.mention}\nDeine Eingabe verstößt gegen die Sicherheitsfilter der KI. Versuche es noch einmal.")
             if artifact.type == generation.ARTIFACT_IMAGE:
                 img = Image.open(io.BytesIO(artifact.binary))
                 generated_images.append(img)
     
     if len(generated_images):
-        await msg.edit(content=f"Fertig. Sende Dateien...")
+        await msg.edit(content=f"{ctx.message.author.mention}\nFertig. Sende Dateien...")
         attachments = []
         
         grid = combine_images(generated_images)
@@ -74,7 +79,7 @@ async def dream(ctx, *, prompt):
         file = discord.File(arr, filename='SPOILER_art.jpg')
         attachments.append(file)
         
-        await msg.edit(content=f"{ctx.message.author.mention}\nDeine Eingabe: ||{prompt}||\nWenn dir ein Bild gefällt, markiere es, indem du unten die passende Nummer anklickst.", attachments=attachments)
+        await msg.edit(content=f"{ctx.message.author.mention}\nDeine Eingabe: ||{prompt}||", attachments=attachments)
         
         for r in number_reactions.keys():
             await msg.add_reaction(r)
