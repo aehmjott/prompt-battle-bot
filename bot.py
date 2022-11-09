@@ -52,7 +52,7 @@ async def dream(ctx, *, prompt):
         width=IMAGE_DIMENSIONS[0], 
         height=IMAGE_DIMENSIONS[1],
         sampler=generation.SAMPLER_K_EULER_ANCESTRAL,
-        guidance_preset=generation.GUIDANCE_PRESET_SLOW,
+        guidance_preset=generation.GUIDANCE_PRESET_SIMPLE,
         cfg_scale=35,
         samples=4,
     )
