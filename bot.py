@@ -12,6 +12,7 @@ import stability_sdk.interfaces.gooseai.generation.generation_pb2 as generation
 import random
 from utils import create_collage, combine_images, get_image_from_grid, pil_image2discord_image, add_text
 import re
+from datetime import datetime, timedelta
 
 load_dotenv()
 
@@ -29,7 +30,7 @@ bot = commands.Bot(
     intents=intents,
 )
 
-IMAGE_DIMENSIONS = (512,512)
+IMAGE_DIMENSIONS = (640,448)
 
 number_reactions = {
     "1️⃣": (0,0),
@@ -40,6 +41,7 @@ number_reactions = {
 
 @bot.command()
 async def dream(ctx, *, prompt):
+    print(f"{ctx.message.author}: dream")
     await ctx.message.delete()
     msg = await ctx.send(f"{ctx.message.author.mention}\nErschaffe Kunst ...")
     
@@ -52,7 +54,7 @@ async def dream(ctx, *, prompt):
         width=IMAGE_DIMENSIONS[0], 
         height=IMAGE_DIMENSIONS[1],
         sampler=generation.SAMPLER_K_EULER_ANCESTRAL,
-        guidance_preset=generation.GUIDANCE_PRESET_SIMPLE,
+        guidance_preset=generation.GUIDANCE_PRESET_FAST_GREEN,
         cfg_scale=35,
         samples=4,
     )
@@ -76,10 +78,10 @@ async def dream(ctx, *, prompt):
         arr = io.BytesIO()
         grid.save(arr, format='JPEG', quality=75)
         arr.seek(0)
-        file = discord.File(arr, filename='SPOILER_art.jpg')
+        file = discord.File(arr, filename="art.jpg")
         attachments.append(file)
         
-        await msg.edit(content=f"{ctx.message.author.mention}\nDeine Eingabe: ||{prompt}||", attachments=attachments)
+        await msg.edit(content=f"{ctx.message.author.mention}\nDeine Eingabe: ```{prompt}```", attachments=attachments)
         
         for r in number_reactions.keys():
             await msg.add_reaction(r)
@@ -87,58 +89,71 @@ async def dream(ctx, *, prompt):
                         
 @bot.command()        
 async def results(ctx):
-    found_users = []
-    
-    await ctx.send("Suche nach Einsendungen...")
+    print(f"{ctx.message.author}: results")
+    await ctx.message.delete()
+
+    msg = await ctx.send("Suche nach Einsendungen...")
     
     images = []
     
     theme = "???"
+    start_date = datetime.now() - timedelta(hours=1)
     
     async for message in ctx.channel.history(limit=200, oldest_first=False):
         if "Neue Runde" in message.content:
-            theme = "???"
             match = re.search("\*\*(.*)\*\*", message.content)
             if match is not None:
                 theme = match.group(1)
-        
-            break
-        if not len(message.attachments) or not len(message.mentions):
+                start_date = message.created_at
+                
+    print(f"Start date: {start_date}")
+            
+    for channel in ctx.guild.channels:
+        if not channel.name.startswith("battle_"):
             continue
             
-        mentioned = message.mentions[0]
-        if mentioned in found_users:
-            continue
-                    
-        for reaction in message.reactions:
-            # mentioned user has reacted to this messages with a number emoji
-            if reaction.emoji in number_reactions.keys() and len([user async for user in reaction.users() if user == mentioned]):
+        print(f"Searching in {channel.name}")
+        
+        entry_found = False
+        
+        async for message in channel.history(limit=200, oldest_first=False, after=start_date):
+        
+            if not len(message.attachments) or not len(message.mentions):
+                continue
                 
-                row, col = number_reactions[reaction.emoji]
-                file = await message.attachments[0].to_file()
-                image = get_image_from_grid(Image.open(file.fp), col, row, IMAGE_DIMENSIONS[0], IMAGE_DIMENSIONS[1])
-                
-                prompt = "???"
-                match = re.search("\|\|(.*)\|\|", message.content)
-                if match is not None:
-                    prompt = match.group(1)
-                
-                images.append(
-                    (image, prompt)
-                )
-                found_users.append(mentioned)
+            if entry_found:
                 break
-
+                
+            for reaction in message.reactions:
+                # mentioned user has reacted to this messages with a number emoji
+                if reaction.emoji in number_reactions.keys() and len([user async for user in reaction.users() if user == message.mentions[0]]):
+                    
+                    row, col = number_reactions[reaction.emoji]
+                    file = await message.attachments[0].to_file()
+                    image = get_image_from_grid(Image.open(file.fp), col, row, IMAGE_DIMENSIONS[0], IMAGE_DIMENSIONS[1])
+                    
+                    prompt = "???"
+                    match = re.search("```(.*)```", message.content)
+                    if match is not None:
+                        prompt = match.group(1)
+                    
+                    images.append(
+                        (image, prompt)
+                    )
+                    entry_found = True
+                    break
     if len(images) > 0:
         images = random.sample(images, len(images))
         collage = create_collage(images, theme)
-        await ctx.send("Die Ergebnisse sind da. Jetzt darf abgestimmt werden!", files=[pil_image2discord_image(collage, "results.jpg")])
+        await msg.edit(content="Die Ergebnisse sind da. Jetzt darf abgestimmt werden!", attachments=[pil_image2discord_image(collage, "results.jpg")])
     else:
-        await ctx.send("Keine Einsendungen gefunden. Bilder müssen mit einer Nummer markiert werden!")
+        await msg.edit(content="Keine Einsendungen gefunden. Bilder müssen mit einer Nummer markiert werden!")
  
  
 @bot.command()        
 async def start(ctx, *, theme=""):
+    print(f"{ctx.message.author}: start")
+    await ctx.message.delete()
     if not theme:
         themes = []
         with open("themes.txt", "r") as themes_file:
@@ -155,6 +170,14 @@ async def h(ctx):
         "**!dream [Stichworte]** - Erstelle vier Kunstwerke zu Stichworten deiner Wahl.\n\n"
         "**!results** - Zeige eine Zusammenfassung der Ergebnisse an. Es wird für jeden Benutzer nur das zuletzt mit einer Nummer markierte Bild genommen."
     )
+    
+
+@bot.command()
+async def clear(ctx, amount=0):
+    if not amount:
+        await ctx.send("Wie viele Nachrichten sollen gelöscht werden?")
+    else:
+        await ctx.channel.purge(limit=amount)
 
 
 @bot.event
