@@ -192,16 +192,19 @@ async def on_reaction_add(reaction, user):
     
     if user.bot:
         return
-    if user not in reaction.message.mentions:
-        await reaction.remove()
-        return
-  
-    for r in reaction.message.reactions:
-        if r.emoji == reaction.emoji:
-            continue
-        if user in [u async for u in r.users()]:
-            print("remove", r.emoji)
-            await r.remove(user)
+    
+    if reaction.emoji in number_reactions.keys():
+    
+        if user not in reaction.message.mentions:
+            await reaction.remove()
+            return
+
+        for r in reaction.message.reactions:
+            if r.emoji == reaction.emoji:
+                continue
+            if user in [u async for u in r.users()]:
+                print("remove", r.emoji)
+                await r.remove(user)
             
     if reaction.emoji == "👁️":
         nums = [n for n in number_reactions.keys() if n in reaction.message.reactions]
@@ -210,9 +213,7 @@ async def on_reaction_add(reaction, user):
             file = await reaction.message.attachments[0].to_file()
             image = get_image_from_grid(Image.open(file.fp), col, row, IMAGE_DIMENSIONS[0], IMAGE_DIMENSIONS[1])
             await reaction.message.channel.send(content="", file=pil_image2discord_image(image, "image.jpg"), reference=reaction.message)
-            
-    
-    
-    
+        await reaction.remove()
+
 
 bot.run(os.environ["DISCORD_TOKEN"])
