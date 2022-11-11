@@ -85,6 +85,7 @@ async def dream(ctx, *, prompt):
         
         for r in number_reactions.keys():
             await msg.add_reaction(r)
+        await.add_reaction("👁️")
                 
                         
 @bot.command()        
@@ -167,7 +168,8 @@ async def start(ctx, *, theme=""):
 async def h(ctx):
     await ctx.send(
         "**!start [THEMA]** - Starte eine neue Runde. Wenn mein Thema angegeben wird, wird ein zufälliges gewählt.\n\n"
-        "**!dream [Stichworte]** - Erstelle vier Kunstwerke zu Stichworten deiner Wahl.\n\n"
+        "**!dream [Stichworte]** - Erstelle vier Kunstwerke zu Stichworten deiner Wahl. "
+        "Wähle eins einem Nummer-Emoji aus, um es einzureichen. Das eingereichte Bild kann du mit 👁️ anzeigen lassen.\n\n"
         "**!results** - Zeige eine Zusammenfassung der Ergebnisse an. Es wird für jeden Benutzer nur das zuletzt mit einer Nummer markierte Bild genommen."
     )
     
@@ -200,6 +202,15 @@ async def on_reaction_add(reaction, user):
         if user in [u async for u in r.users()]:
             print("remove", r.emoji)
             await r.remove(user)
+            
+    if reaction.emoji == "👁️":
+        nums = [n for n in number_reactions.keys() if n in reaction.message.reactions]
+        if len(nums)
+            row, col = number_reactions[nums[0]]
+            file = await reaction.message.attachments[0].to_file()
+            image = get_image_from_grid(Image.open(file.fp), col, row, IMAGE_DIMENSIONS[0], IMAGE_DIMENSIONS[1])
+            await reaction.message.channel.send(content="", file=pil_image2discord_image(image, "image.jpg"), reference=reaction.message)
+            
     
     
     
