@@ -85,7 +85,7 @@ async def dream(ctx, *, prompt):
         
         for r in number_reactions.keys():
             await msg.add_reaction(r)
-        await.add_reaction("👁️")
+        await msg.add_reaction("👁️")
                 
                         
 @bot.command()        
@@ -207,13 +207,21 @@ async def on_reaction_add(reaction, user):
                 await r.remove(user)
             
     if reaction.emoji == "👁️":
-        nums = [n for n in number_reactions.keys() if n in reaction.message.reactions]
-        if len(nums)
+        await reaction.remove(user)
+        nums = []
+        for r in reaction.message.reactions:
+            if r.emoji not in number_reactions.keys():
+                continue
+            if user in [u async for u in r.users()]:
+                nums.append(r.emoji)
+                
+        print(nums)
+
+        if len(nums):
             row, col = number_reactions[nums[0]]
             file = await reaction.message.attachments[0].to_file()
             image = get_image_from_grid(Image.open(file.fp), col, row, IMAGE_DIMENSIONS[0], IMAGE_DIMENSIONS[1])
             await reaction.message.channel.send(content="", file=pil_image2discord_image(image, "image.jpg"), reference=reaction.message)
-        await reaction.remove()
 
 
 bot.run(os.environ["DISCORD_TOKEN"])
