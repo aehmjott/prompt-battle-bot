@@ -102,10 +102,11 @@ async def results(ctx):
     
     async for message in ctx.channel.history(limit=200, oldest_first=False):
         if "Neue Runde" in message.content:
+            start_date = message.created_at
             match = re.search("\*\*(.*)\*\*", message.content)
             if match is not None:
                 theme = match.group(1)
-                start_date = message.created_at
+            break
                 
     print(f"Start date: {start_date}")
             
