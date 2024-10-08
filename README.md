@@ -1,6 +1,8 @@
 # prompt-battle-bot
 A discord bot to play "Prompt Battle" using Stable Diffusion's DreamStudio
 
+Inspired by: https://promptbattle.com/
+
 [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template/hxAexO?referralCode=jwithing)
 
 ## Setup
